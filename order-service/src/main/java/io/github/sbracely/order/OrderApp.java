@@ -16,7 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.kafka.config.TopicBuilder;
-import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JacksonJsonSerde;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -30,7 +30,7 @@ public class OrderApp {
 
     private static final Logger LOG = LoggerFactory.getLogger(OrderApp.class);
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         SpringApplication.run(OrderApp.class, args);
     }
 
@@ -66,7 +66,9 @@ public class OrderApp {
 
     @Bean
     public KStream<Long, Order> stream(StreamsBuilder builder) {
-        JsonSerde<Order> orderSerde = new JsonSerde<>(Order.class);
+        JacksonJsonSerde<Order> orderSerde = new JacksonJsonSerde<>(Order.class);
+        Duration joinWindow = Duration.ofSeconds(10);
+        Duration legacyGrace = Duration.ofMillis(Math.max(Duration.ofDays(1).toMillis() - 2 * joinWindow.toMillis(), 0L));
         // payment-orders 作为 join 的左流，key=订单ID，value=Order(JSON)
         KStream<Long, Order> stream = builder
                 .stream("payment-orders", Consumed.with(Serdes.Long(), orderSerde));
@@ -75,9 +77,9 @@ public class OrderApp {
         stream.join(
                         builder.stream("stock-orders"),
                         orderManageService::confirm,
-                        JoinWindows.of(Duration.ofSeconds(10)),
+                        JoinWindows.ofTimeDifferenceAndGrace(joinWindow, legacyGrace),
                         StreamJoined.with(Serdes.Long(), orderSerde, orderSerde))
-                .peek((k, o) -> LOG.info("Output: {}", o))
+                .peek((k, o) -> LOG.info("Output[{}]: {}", k, o))
                 // 把最终状态重新写回 orders，供下游服务执行确认或补偿
                 .to("orders");
 
@@ -88,7 +90,7 @@ public class OrderApp {
     public KTable<Long, Order> table(StreamsBuilder builder) {
         KeyValueBytesStoreSupplier store =
                 Stores.persistentKeyValueStore("orders");
-        JsonSerde<Order> orderSerde = new JsonSerde<>(Order.class);
+        JacksonJsonSerde<Order> orderSerde = new JacksonJsonSerde<>(Order.class);
         // 读取 orders 全量事件流并物化成本地可查询 KTable
         KStream<Long, Order> stream = builder
                 .stream("orders", Consumed.with(Serdes.Long(), orderSerde));
