@@ -11,6 +11,7 @@
     <groupId>io.github.sbracely</groupId>
     <artifactId>sample-spring-kafka-microservices</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
     <name>sample-spring-kafka-microservices</name>
     <description>sample-spring-kafka-microservices</description>
     <url/>
@@ -29,6 +30,14 @@
     <properties>
         <java.version>25</java.version>
     </properties>
+
+    <modules>
+        <module>base-domain</module>
+        <module>order-service</module>
+        <module>payment-service</module>
+        <module>stock-service</module>
+    </modules>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
