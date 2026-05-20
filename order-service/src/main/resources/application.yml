@@ -9,7 +9,6 @@ spring.kafka:
       default.key.serde: org.apache.kafka.common.serialization.Serdes$LongSerde
       default.value.serde: org.springframework.kafka.support.serializer.JacksonJsonSerde
       spring.json.trusted.packages: "*"
-    state-dir: /tmp/kafka-streams/
 
 spring.output.ansi.enabled: ALWAYS
 
