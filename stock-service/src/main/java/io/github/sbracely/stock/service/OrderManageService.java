@@ -25,7 +25,7 @@ public class OrderManageService {
         Product product = repository.findById(order.getProductId()).orElseThrow();
         LOG.info("Found: {}", product);
 
-        if (order.getProductCount() < product.getAvailableItems()) {
+        if (order.getProductCount() <= product.getAvailableItems()) {
             product.setReservedItems(product.getReservedItems() + order.getProductCount());
             product.setAvailableItems(product.getAvailableItems() - order.getProductCount());
             order.setStatus("ACCEPT");

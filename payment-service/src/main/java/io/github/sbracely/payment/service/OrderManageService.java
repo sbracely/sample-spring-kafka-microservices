@@ -25,7 +25,7 @@ public class OrderManageService {
         Customer customer = repository.findById(order.getCustomerId()).orElseThrow();
         LOG.info("Found: {}", customer);
 
-        if (order.getPrice() < customer.getAmountAvailable()) {
+        if (order.getPrice() <= customer.getAmountAvailable()) {
             order.setStatus("ACCEPT");
             customer.setAmountReserved(customer.getAmountReserved() + order.getPrice());
             customer.setAmountAvailable(customer.getAmountAvailable() - order.getPrice());
